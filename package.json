@@ -16,6 +16,7 @@
     "@types/dat.gui": "^0.7.12",
     "@types/three": "^0.159.0",
     "dat.gui": "^0.7.9",
+    "glsl-random": "^0.0.5",
     "parcel": "^2.10.3",
     "postcss": "^8.4.32",
     "postcss-modules": "^4.3.1",
