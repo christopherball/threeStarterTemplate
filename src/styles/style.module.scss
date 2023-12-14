@@ -1,0 +1,11 @@
+@use "variables" as *;
+
+:export {
+  bgColor: $bgColor;
+}
+
+//? The above represents exposed variables for module import via typescript.
+//? The below shows how to access via javascript/typescript files.
+//* import styleVars from "../styles/style.module.scss";
+//* let el = document.querySelector<HTMLElement>("div.className")!;
+//* el.style.color = styleVars.bgColor;

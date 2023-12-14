@@ -1,0 +1,17 @@
+@use "variables" as *;
+
+body {
+  background-color: $bgColor;
+  margin: 0;
+  overflow: hidden;
+}
+
+.statsOff,
+.controlsOff {
+  display: none;
+}
+
+.statsOn,
+.controlsOn {
+  display: block;
+}
