@@ -2,6 +2,7 @@
   "compilerOptions": {
     "types": [
       "./src/types/parcel.d.ts"
-    ]
+    ],
+    "module": "ESNext"
   }
 }
