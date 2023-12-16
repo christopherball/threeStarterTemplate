@@ -1,23 +1,28 @@
 import * as THREE from "three";
 import Stats from "./lib/stats.js";
 import { Utilities } from "./lib/utilities.js";
-import fragShader from "../shaders/randomnoise.frag";
+import fragShaderNoise from "../shaders/randomnoise.frag";
+import fragShaderGOL from "../shaders/gameoflife.frag";
 import vertShader from "../shaders/shared.vert";
 
 //! Globals -------------------------------------------------------------------
 const stats = new Stats();
 let camera: THREE.OrthographicCamera,
-  scene: THREE.Scene,
+  sceneSeed: THREE.Scene,
+  sceneGOL: THREE.Scene,
   renderer: THREE.WebGLRenderer,
   uniforms: any,
   clock: THREE.Clock,
   mousePressed = false,
   animationRequestId: number,
-  animationLoopState = true;
+  animationLoopState = true,
+  renderBufferTarget: THREE.WebGLRenderTarget,
+  renderBufferTex: THREE.FramebufferTexture;
 
 //! Initialization ------------------------------------------------------------
 function init(callback: () => void) {
-  scene = new THREE.Scene();
+  sceneSeed = new THREE.Scene();
+  sceneGOL = new THREE.Scene();
   camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   clock = new THREE.Clock();
 
@@ -44,25 +49,60 @@ function init(callback: () => void) {
       value: new THREE.Vector2(),
     },
     uRandomNum: { value: Math.random() },
+    uState: { value: new THREE.Texture() },
+    uPresent: { value: false },
   };
-
-  const geometry = new THREE.PlaneGeometry(2, 2);
-  const material = new THREE.ShaderMaterial({
-    uniforms: uniforms,
-    vertexShader: vertShader,
-    fragmentShader: fragShader,
-    glslVersion: THREE.GLSL3,
-  });
-  scene.add(new THREE.Mesh(geometry, material));
 
   renderer = new THREE.WebGLRenderer();
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
-  document.getElementById("container").appendChild(renderer.domElement);
 
+  renderBufferTarget = new THREE.WebGLRenderTarget(
+    window.innerWidth * window.devicePixelRatio,
+    window.innerHeight * window.devicePixelRatio
+  );
+
+  renderBufferTex = new THREE.FramebufferTexture(
+    window.innerWidth * window.devicePixelRatio,
+    window.innerHeight * window.devicePixelRatio
+  );
+
+  // Setting up our initial scene
+  const geometry = new THREE.PlaneGeometry(2, 2);
+  const materialNoise = new THREE.ShaderMaterial({
+    uniforms: uniforms,
+    vertexShader: vertShader,
+    fragmentShader: fragShaderNoise,
+    glslVersion: THREE.GLSL3,
+  });
+  sceneSeed.add(new THREE.Mesh(geometry, materialNoise));
+
+  // Rendering to our buffer target
+  renderer.setRenderTarget(renderBufferTarget);
+  renderer.render(sceneSeed, camera);
+
+  // Assigning buffer results to uniform
+  renderer.copyFramebufferToTexture(new THREE.Vector2(), renderBufferTex);
+  uniforms.uState.value = renderBufferTex;
+
+  // Instructing our renderer to render to device screen now
+  renderer.setRenderTarget(null);
+
+  // Setting up our regular animation scene
+  const material = new THREE.ShaderMaterial({
+    uniforms: uniforms,
+    vertexShader: vertShader,
+    fragmentShader: fragShaderGOL,
+    glslVersion: THREE.GLSL3,
+  });
+  sceneGOL.add(new THREE.Mesh(geometry, material));
+
+  // DOM-related changes
+  document.getElementById("container").appendChild(renderer.domElement);
   stats.dom.className = "statsOff";
   document.body.appendChild(stats.dom);
 
+  // Binding event listeners
   window.addEventListener("resize", onWindowResize);
   window.addEventListener("keypress", onKeypress);
   window.addEventListener("mousedown", onMousePressed);
@@ -74,13 +114,26 @@ function init(callback: () => void) {
 
 //! Animation Loop ------------------------------------------------------------
 function animate() {
-  // Updating uniforms for shaders
+  // Updating standard uniforms for shaders
   uniforms.uTimeDelta.value = clock.getDelta();
   uniforms.uTime.value = clock.getElapsedTime();
   uniforms.uFrame.value = renderer.info.render.frame;
   uniforms.uFrameRate.value = stats.fps;
 
-  renderer.render(scene, camera);
+  // Rendering to our buffer target
+  renderer.setRenderTarget(renderBufferTarget);
+  renderer.render(sceneGOL, camera);
+
+  // Assigning buffer results as texture to uniform
+  renderer.copyFramebufferToTexture(new THREE.Vector2(), renderBufferTex);
+  uniforms.uState.value = renderBufferTex;
+
+  // Instructing our renderer to present buffer results to device screen now
+  renderer.setRenderTarget(null);
+  uniforms.uPresent.value = true;
+  renderer.render(sceneGOL, camera);
+  uniforms.uPresent.value = false;
+
   stats.update();
   animationRequestId = requestAnimationFrame(animate);
 }

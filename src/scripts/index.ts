@@ -48,6 +48,17 @@ function init(callback: () => void) {
   callback();
 }
 
+//! Animation Loop ------------------------------------------------------------
+function animate() {
+  cube.rotation.x += controls.rotationSpeed;
+  cube.rotation.y += controls.rotationSpeed;
+
+  renderer.render(scene, camera);
+  stats.update();
+
+  animationRequestId = requestAnimationFrame(animate);
+}
+
 //! Event Handling ------------------------------------------------------------
 function onWindowResize(e: Event) {
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -75,17 +86,6 @@ function onKeypress(e: KeyboardEvent) {
       animationRequestId = requestAnimationFrame(animate);
     }
   }
-}
-
-//! Animation Loop ------------------------------------------------------------
-function animate() {
-  cube.rotation.x += controls.rotationSpeed;
-  cube.rotation.y += controls.rotationSpeed;
-
-  renderer.render(scene, camera);
-  stats.update();
-
-  animationRequestId = requestAnimationFrame(animate);
 }
 
 init(animate);

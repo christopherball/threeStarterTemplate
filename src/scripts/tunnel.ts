@@ -87,6 +87,19 @@ function init(callback: () => void) {
   callback();
 }
 
+//! Animation Loop ------------------------------------------------------------
+function animate() {
+  // Updating uniforms for shaders
+  uniforms.uTimeDelta.value = clock.getDelta();
+  uniforms.uTime.value = clock.getElapsedTime();
+  uniforms.uFrame.value = renderer.info.render.frame;
+  uniforms.uFrameRate.value = stats.fps;
+
+  renderer.render(scene, camera);
+  stats.update();
+  animationRequestId = requestAnimationFrame(animate);
+}
+
 //! Event Handling ------------------------------------------------------------
 function onWindowResize(e: Event) {
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -136,19 +149,6 @@ function onMouseMoved(e: MouseEvent) {
     );
   }
   return false;
-}
-
-//! Animation Loop ------------------------------------------------------------
-function animate() {
-  // Updating uniforms for shaders
-  uniforms.uTimeDelta.value = clock.getDelta();
-  uniforms.uTime.value = clock.getElapsedTime();
-  uniforms.uFrame.value = renderer.info.render.frame;
-  uniforms.uFrameRate.value = stats.fps;
-
-  renderer.render(scene, camera);
-  stats.update();
-  animationRequestId = requestAnimationFrame(animate);
 }
 
 init(animate);
